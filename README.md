@@ -44,201 +44,96 @@ You are **a cybersecurity analyst** or **an IT professional** looking to underst
 5. **Configure Security Logs and Monitor Attacker Activity**
 6. **Visualize Attacks in Sentinel with Geospatial Mapping**
 
-<h2>Configuration Steps</h2>
+## Configuration Steps
 
 ### 1. Create Resource Group, Virtual Network, and VM in Azure
 <p>
-<img src="https://github.com/user-attachments/assets/4d18d3e3-d73b-4561-8b10-505968de5c82" height="60%" width="60%" alt="High Level Overview"/>
+<img src="https://github.com/user-attachments/assets/4d18d3e3-d73b-4561-8b10-505968de5c82" height="60%" width="60%" alt="Azure Resource Setup"/>
 </p>
-<p>
 
 - Set up an **Azure Resource Group** for project organization.
 - Create a **Virtual Network (VNet)** and ensure it’s in the same region as the VM.
 - Deploy a **Windows 10 Virtual Machine** in Azure.
+- Open all ports in the **Network Security Group (NSG)** for lab testing (**Note: This is dangerous in a real-world scenario**).
+- Create an **inbound security rule** that allows unrestricted traffic (**again, not recommended in production**).
 
-</p>
-<br />
-
+### 2. Disable Firewall Rules in Windows 10 VM
 <p>
-<img src="https://github.com/user-attachments/assets/cd1f8698-5f5f-4438-bb90-e89c92f25d20" height="60%" width="60%" alt="Azure VM image"/>
+<img src="https://github.com/user-attachments/assets/d956d59c-c87b-4918-82d6-e8bf8a146c09" height="60%" width="60%" alt="Turning Off Firewall"/>
 </p>
-<p>
 
-- Open all ports in our Network Security Group for our lab (Dangerous in real life).
+- Log in to the VM, open the **Start Menu**, and search for `wf.msc`.
+- Navigate to **Windows Defender Firewall Properties** and disable **Firewall State** for Domain, Private, and Public profiles.
+- Open **PowerShell** on your local machine and ping the VM’s IP address to verify connectivity.
 
-- Create an inbound security rule that allows any traffic, from any source, any protocol, any action, etc.
-
-</p>
-<br />
-
-### 2. Login to VM and Drop VM Firewall Rules in Windows 10.
-<p>
-<img src="https://github.com/user-attachments/assets/d956d59c-c87b-4918-82d6-e8bf8a146c09" height="60%" width="60%" alt="Turning Off Firewal"/>
-</p>
-<p>
-
-- Login to VM and navigate to start menu and enter "wf.msc"
-
-- Navigate to "Windows Defender FIrewall Properties" and turn off "Firewall State" for Domain Profile, Private Profile, Public Profile, and IPsec Settings.
-
-- Go back to powershell on your local device and ping the ip-address of the VM. The result should have a successful connectivity as now anyone can reach the VM. 
-
-</p>
-<br />
-
-### 3. Viewing Logs in the VM and Configure a Log Repository in Azure
+### 3. Viewing Security Logs in the VM and Configuring Log Analytics
 <p>
 <img src="https://github.com/user-attachments/assets/f99af185-e30d-40f1-be0e-048fa2cb2801" height="60%" width="60%" alt="Event Viewer"/>
 </p>
-<p>
 
-- Log back into the VM and go to 'Event Viewer' in the VM.
+- Open **Event Viewer** in the VM.
+- Navigate to **Windows Logs → Security** to observe security-related events.
+- **Event ID 4625** represents a failed login attempt.
+- After some time, multiple failed login attempts will appear.
+- On Azure, create a **Log Analytics Workspace** in the same **Resource Group and Region** as your VM.
 
-- Navigate to the 'Windows Logs' folder and 'security' to witness the security events on the laptop.
-
-- Notice Event ID represents the type of event that has taken place. 4625 = A failure to login to windows machine.
-
-- After awhile you will notice a plethora of failed login attempts to the VM.
-
-</p>
-<br />
-
-<p>
-<img src="https://github.com/user-attachments/assets/f826be0b-8bdf-48c0-890a-35aab232a8d9" height="60%" width="60%" alt="Create LAW"/>
-</p>
-<p>
-
-- On Azure, go to Log Analytics Workspace and create one under the same resource group and region.
-
-</p>
-<br />
-
-### 4. Configure Microsoft Sentinel (SIEM) and Connect Log Analytics Workspace
-
+### 4. Configure Microsoft Sentinel and Connect Log Analytics Workspace
 <p>
 <img src="https://github.com/user-attachments/assets/1b8b6c95-5e85-480f-937d-1715cd8bc3d0" height="60%" width="60%" alt="Connecting to Sentinel"/>
 </p>
-<p>
 
-- Go to Microsoft Sentinel and Connect the Newly added Log Analytics Workspace to the Sentinel Instance.
+- In **Microsoft Sentinel**, connect the **Log Analytics Workspace** created in the previous step.
 
-</p>
-<br />
+## Deployment Steps
 
-<h2>Deployment Steps</h2>
-
-### 5. Configure the Event Connector from the VM and Log Analytics Workspace. 
+### 5. Configure the Event Connector for VM and Log Analytics Workspace
 <p>
 <img src="https://github.com/user-attachments/assets/92a39ece-2ada-4833-9068-c4aa1d457c42" height="60%" width="60%" alt="Install Programs"/>
 </p>
-<p>
 
-- In the sentinel instance, go to content hub and install the "Windows Security Events" add on.
+- In **Sentinel**, install the **Windows Security Events** add-on from the **Content Hub**.
+- Click **Manage**, then add the **Windows Security Events via AMA** connector.
+- Create a **Data Collection Rule (DCR)** to send logs from the VM to **Log Analytics Workspace**.
+- Select the VM and leave other settings as default.
 
-- Once installed click "Manage" and add the "Windows Security Events via AMA" to open the connector page.
-
-- Create a data collection rule for our resource group and VM to share log analytics with the Log Analytics Workspace.
-
-- In the rule, select our VM and leave everything else default. Click create, notice in our VM the extensions and applications being added.
-
-</p>
-<br />
-
-<p>
-<img src="https://github.com/user-attachments/assets/896d6888-5d32-48ef-a9f3-c56e50518516" height="60%" width="60%" alt="Log Workspaces"/>
-</p>
-<p>
-
-- Verify logs are now being shared to the Log Analytics Workspace. Go to the resource group and select our LAW.
-
-- Under our LAW, select logs and run the query "SecurityEvent" to witness the logs now being shared from our VM.
-
-</p>
-<br />
-
-### 5. Querying our Log Repository using KQL
+### 6. Querying Log Repository using KQL
 <p>
 <img src="https://github.com/user-attachments/assets/644a5aea-1912-4d86-b541-41749943eab7" height="60%" width="60%" alt="Return an instance with columns"/>
 </p>
-<p>
 
-- Run the query SecurityEvent | where Account == "\\FAGNER" | project TimeGenerated, Account, Computer, EventID, Activity, IpAddress
+```kql
+SecurityEvent 
+| where Account == "\\FAGNER" 
+| project TimeGenerated, Account, Computer, EventID, Activity, IpAddress
+```
 
-- Bonus: See how many attacks have happened in the last 5 minutes. 
+- **Bonus:** Count how many attacks have occurred in the last 5 minutes.
+- **Bonus:** Lookup attacker **IP Address** information.
 
-- Bonus: Lookup the IPAddress from our attacker. 
-
-</p>
-<br />
-
-### 6. Uploading the Different Attackers to a Geospatial Map
-
+### 7. Uploading Attackers’ IPs to a Geospatial Map
 <p>
 <img src="https://github.com/user-attachments/assets/ed9e0be0-3ab3-4a00-92c9-e3ff74017fe7" height="60%" width="60%" alt="geoip"/>
 </p>
-<p>
 
-- Download the following file that summarizes IP Address Ranges and Specific Locations. [Drive File](https://drive.google.com/file/d/13EfjM_4BohrmaxqXZLB5VUBIz2sv9Siz/view?usp=sharing)
+- Download [GeoIP Database](https://drive.google.com/file/d/13EfjM_4BohrmaxqXZLB5VUBIz2sv9Siz/view?usp=sharing).
+- In **Sentinel**, navigate to **Configuration → Watchlist**, and create a watchlist named `geoip`.
+- Set `searchkey` as `network` and upload the database file.
 
-- Go to our Sentinel instance and go to configuration --> Watchlist --> create an watchlist with the name and alias 'geoip' and a import the source file we downloaded.
+### 8. Mapping Attackers Using KQL and Geolocation
+```kql
+let GeoIPDB_FULL = _GetWatchlist("geoip");
+let WindowsEvents = SecurityEvent
+| where EventID == 4625
+| evaluate ipv4_lookup(GeoIPDB_FULL, IpAddress, network);
+WindowsEvents 
+| project TimeGenerated, Computer, AttackerIp = IpAddress, cityname, countryname, latitude, longitude
+```
 
-- Enter searchkey as 'network' and create.
-
-</p> 
-<br />
-
-<p>
-<img src="https://github.com/user-attachments/assets/fc9f9ee4-31f9-4ada-aff4-d76e0ead950d" height="60%" width="60%" alt="geoip on LAW"/>
-</p>
-<p>
-
-- Once fully uploaded, lets examine some queries in the Log Analytics Workspace.
-
-- If we run the query '_GetWatchlist("geoip")' we notice that we see the geoip file we uploaded in our Sentinel instance. 
-
-</p> 
-<br />
-
-<p>
-<img src="https://github.com/user-attachments/assets/02601115-c921-403a-8181-830c927b5181" height="60%" width="60%" alt="Running KQL query against our new tables"/>
-</p>
-<p>
-
-- Test to see our attackers locations against our login failures.
-    
-    let GeoIPDB_FULL = _GetWatchlist("geoip");
-    let WindowsEvents = SecurityEvent
-    | where IpAddress == <attacker IP address> 
-    | where EventID == 4625
-    | order by TimeGenerated desc
-    | evaluate ipv4_lookup(GeoIPDB_FULL, IpAddress, network);
-    WindowsEvents 
-    | project TimeGenerated, Computer, AttackerIp = IpAddress, cityname, countryname, latitude, longitude
-    
-</p>
-<br />
-
-<p>
-<img src="https://github.com/user-attachments/assets/de38187b-0fdd-4a10-a398-156035838585" height="60%" width="60%" alt="Creating the Map"/>
-</p>
-<p>
-
-- Go to our Sentinel instance and add a workbook.
-
-- Follow the link and add our map.json to the workbook: [Drive File](https://drive.google.com/file/d/1ErlVEK5cQjpGyOcu4T02xYy7F31dWuir/view?usp=drive_link)
-
-- Under advanced editor, erase everything, and copy/paste the map.json inside. Then save. 
-</p>
-<br />
+---
 
 ## Conclusion
-Deploying a **honeypot in Azure** is a powerful way to observe real-world cyber threats in action. By setting up **Microsoft Sentinel**, configuring **log analytics**, and leveraging **Kusto Query Language (KQL)**, we gain invaluable insights into potential attack vectors and malicious actors.
+Deploying a **honeypot in Azure** allows real-world threat monitoring, log analysis, and proactive cybersecurity research. This project is ideal for IT professionals looking to strengthen security expertise and gain hands-on experience with **Microsoft Sentinel** and **KQL**.
 
-Through this project, we:
-- **Monitored real-world attack attempts** and analyzed unauthorized login attempts.
-- **Configured Azure Sentinel** to collect security logs and track malicious activities.
-- **Queried log data with KQL** to extract meaningful threat intelligence.
-- **Mapped attacker locations** using geospatial visualization.
 
 This lab serves as a foundational project for anyone pursuing cybersecurity, **blue team operations**, or **threat intelligence analysis**. Understanding attacker behavior is crucial for building **proactive defense mechanisms** in real-world enterprise environments. 
 
