@@ -1,338 +1,245 @@
 <p align="center">
 <img src="https://github.com/user-attachments/assets/757ba505-315f-431e-bfc5-c320405709a7" height="50%" width="50%" alt="Microsoft Active Directory Logo"/>
 </p>
+# Setting Up a Honeypot for Public Attackers using Azure
 
-<h1>Setting Up Honeypot for Public Attackers using Azure</h1>
-This <br />
+## Introduction
+Cybersecurity threats are on the rise, and organizations must continuously evolve their defensive strategies. One effective method for understanding potential attackers is by deploying a **honeypot**—a system designed to attract malicious actors and monitor their behavior. In this project, we leverage **Microsoft Azure** to create a controlled environment that logs attack attempts, identifies threat actors, and visualizes malicious activity using **Microsoft Sentinel**. 
 
-<h1>Familiar Use Case</h1>
-You are<br />
+By following this guide, you will:
+- Set up an **Azure-based honeypot** to analyze real-world cyber threats.
+- Configure **Active Directory, Log Analytics, and Microsoft Sentinel** for security monitoring.
+- Use **Kusto Query Language (KQL)** to investigate attack patterns.
+- Visualize attacker geolocations on a **geospatial map**.
 
-<h2>Video Demonstration</h2>
+This tutorial is designed for cybersecurity enthusiasts, IT professionals, and anyone looking to strengthen their security skills by **actively engaging with live security threats** in a safe environment.
 
-- ### [YouTube: How to Deploy on-premises Active Directory within Azure Compute](https://www.youtube.com)
+---
 
-<h2>Environments and Technologies Used</h2>
+## Familiar Use Case
+You are **a cybersecurity analyst** or **an IT professional** looking to understand how attackers operate. By setting up this honeypot, you can gain hands-on experience in threat detection, log analysis, and security monitoring using industry-standard tools like **Microsoft Sentinel**.
 
-- Microsoft Azure (Virtual Machines/Compute)
-- Remote Desktop
-- Active Directory Domain Services
-- PowerShell
+## Video Demonstration
+- ### [YouTube: How to Create an At-Home Security Operations Center Lab](https://www.youtube.com)
 
-<h2>Operating Systems Used </h2>
+## Environments and Technologies Used
+- **Microsoft Azure** (Virtual Machines/VNet/Log Analytics/Sentinel)
+- **Remote Desktop Protocol (RDP)**
+- **Active Directory Domain Services (ADDS)**
+- **PowerShell**
 
-- Windows Server 2022
-- Windows 10 (21H2)
+## Operating Systems Used
+- **Windows 10 (21H2)**
 
-<h2>High-Level Deployment and Configuration Steps</h2>
+## High-Level Deployment and Configuration Steps
+<p>
+<img src="https://github.com/user-attachments/assets/7ab59036-9be8-4609-9df5-043481597aef" height="60%" width="60%" alt="High Level Overview"/>
+</p>
 
-1. Create Azure Resources
-
-    - Create a dedicated Resource Group (e.g., "active-directory-lab")
-
-    - Create a Virtual Network (e.g., "active-directory-vnet") in your preferred region (East US)
-
-    - Provision two Azure Virtual Machines:
-        1. DC-1: Windows Server 2022 (to be the Domain Controller)
-        2. Client-1: Windows 10 (to be the domain-joined client)
-  
-2. Configure Network and Firewall Settings
-
-    - Set a Static Private IP address for the Domain Controller’s Network Interface
-    
-    - Disable the Windows Firewall on the Domain Controller (for lab/demonstration purposes)
-    
-    - On Client-1, change the DNS server to point to the Domain Controller’s private IP address
-
-3. Install and Configure Active Directory Domain Services
-
-    - Install the "Active Directory Domain Services" server role on DC-1
-    
-    - Promote DC-1 to a Domain Controller and create a new forest (e.g., mydomain.com)
-    
-    - Restart DC-1 and log in to the new domain (e.g., mydomain.com\labuser)
-
-4. Join the Client to the Domain and Manage Objects
-
-    - Create a Domain Admin user (e.g., jane_admin) and assign Domain Admins membership
-    
-    - Join Client-1 to the new domain (mydomain.com)
-    
-    - Use PowerShell to create additional users in bulk
-    
-    - Configure Account Lockout, enable/disable accounts, and observe security logs for user events
+1. **Create Azure Resources**
+2. **Configure Network and Firewall Settings**
+3. **Install and Configure Active Directory Domain Services**
+4. **Join the Client to the Domain and Manage Objects**
+5. **Configure Security Logs and Monitor Attacker Activity**
+6. **Visualize Attacks in Sentinel with Geospatial Mapping**
 
 <h2>Configuration Steps</h2>
 
-### 1. Create Resource Group and Virtual Network
+### 1. Create Resource Group, Virtual Network, and VM in Azure
 <p>
-<img src="https://github.com/user-attachments/assets/e561a859-d224-4ab0-aa21-a8ad9e9655fb" height="60%" width="60%" alt="Azure VM image"/>
+<img src="https://github.com/user-attachments/assets/4d18d3e3-d73b-4561-8b10-505968de5c82" height="60%" width="60%" alt="High Level Overview"/>
 </p>
 <p>
 
-- Create a Windows 10 virtual machine in Microsoft Azure.
-  
-- Use a dedicated resource group "active-directory-lab" for connection purposes.
+- Set up an **Azure Resource Group** for project organization.
+- Create a **Virtual Network (VNet)** and ensure it’s in the same region as the VM.
+- Deploy a **Windows 10 Virtual Machine** in Azure.
 
-- Create a virtual network under the new resource group and call it "active-directory-vnet" under East US.
-</p>
-<br />
-
-<p>
-<img src="https://github.com/user-attachments/assets/ff64c3f6-01c4-4cb2-b457-e5ddfef53836" height="60%" width="60%" alt="Azure VM image"/>
-</p>
-<p>
-
-- Create a Windows 10 virtual machine in Microsoft Azure, call it "DC-1" under East US.
-  
-- Make sure to use the dedicated resource group "active-directory-lab".
-
-- For image use "Windows Server 2022 Datacenter: Azure Edition". Make sure to enable licensing and RDP/SSH.
-
-- Under Networking make sure to select the Active-Directory-Vnet we created. Then Create. 
 </p>
 <br />
 
 <p>
-<img src="https://github.com/user-attachments/assets/d1c31d13-9136-410e-90f1-4b9ccb6b089a" height="60%" width="60%" alt="Azure VM image"/>
+<img src="https://github.com/user-attachments/assets/cd1f8698-5f5f-4438-bb90-e89c92f25d20" height="60%" width="60%" alt="Azure VM image"/>
 </p>
 <p>
 
-- Create a Windows 10 virtual machine in Microsoft Azure, call it "client-1" under East US.
-  
-- Make sure to use the dedicated resource group "active-directory-lab".
+- Open all ports in our Network Security Group for our lab (Dangerous in real life).
 
-- For image use "Windows 10 Pro". Make sure to enable RDP/SSH and licensing.
+- Create an inbound security rule that allows any traffic, from any source, any protocol, any action, etc.
 
-- Under Networking make sure to select the Active-Directory-Vnet we created. 
 </p>
 <br />
 
-### 2. Create VM and Configure Firewall Rules
+### 2. Login to VM and Drop VM Firewall Rules in Windows 10.
 <p>
-<img src="https://github.com/user-attachments/assets/f56d858f-5145-4693-9f45-e0265931976a" height="60%" width="60%" alt="DNS IP Addressing"/>
+<img src="https://github.com/user-attachments/assets/d956d59c-c87b-4918-82d6-e8bf8a146c09" height="60%" width="60%" alt="Turning Off Firewal"/>
 </p>
 <p>
 
-- On Azure Portal:
-  - Go to VM → dc-1 → Networking → Click on the NIC → ipconfig1.
-  - Set the Private IP address to Static.
-</p>
-<br />
+- Login to VM and navigate to start menu and enter "wf.msc"
 
-<p>
-<img src="https://github.com/user-attachments/assets/71becd86-5d4a-4a01-837b-3d13998dab19" height="60%" width="60%" alt="DNS IP Addressing"/>
-</p>
-<p>
+- Navigate to "Windows Defender FIrewall Properties" and turn off "Firewall State" for Domain Profile, Private Profile, Public Profile, and IPsec Settings.
 
-- On DC-1 (inside the VM):
-  - Press Windows Key + R, type wf.msc to open Windows Firewall.
-  - Click Properties → Turn off firewall (for all profiles) → Apply.
+- Go back to powershell on your local device and ping the ip-address of the VM. The result should have a successful connectivity as now anyone can reach the VM. 
+
 </p>
 <br />
 
-### 3. Login to New VM and Disable Windows Firewall
+### 3. Viewing Logs in the VM and Configure a Log Repository in Azure
 <p>
-<img src="https://github.com/user-attachments/assets/6c7cb46a-da29-4583-ba88-c79a0ceac911" height="60%" width="60%" alt="Set Client 1 DNS"/>
+<img src="https://github.com/user-attachments/assets/f99af185-e30d-40f1-be0e-048fa2cb2801" height="60%" width="60%" alt="Event Viewer"/>
 </p>
 <p>
 
-- On Azure Portal for Client-1:
-  - Go to VM → client-1 → Networking → Click on the NIC → DNS Servers.
-  - Change from Inherit from Virtual Network to Custom, and paste dc-1’s private IP.
-  - Restart the client-1 VM.
+- Log back into the VM and go to 'Event Viewer' in the VM.
+
+- Navigate to the 'Windows Logs' folder and 'security' to witness the security events on the laptop.
+
+- Notice Event ID represents the type of event that has taken place. 4625 = A failure to login to windows machine.
+
+- After awhile you will notice a plethora of failed login attempts to the VM.
+
 </p>
 <br />
 
 <p>
-<img src="https://github.com/user-attachments/assets/aa8ad062-7c0e-457a-9e1c-67117e122ebd" height="60%" width="60%" alt="Set Client 1 DNS"/>
+<img src="https://github.com/user-attachments/assets/f826be0b-8bdf-48c0-890a-35aab232a8d9" height="60%" width="60%" alt="Create LAW"/>
 </p>
 <p>
-  
-- RDP into client-1 and open a terminal:
-  - Ping dc-1’s private IP address to ensure connectivity. 
+
+- On Azure, go to Log Analytics Workspace and create one under the same resource group and region.
+
 </p>
 <br />
 
+### 4. Configure Microsoft Sentinel (SIEM) and Connect Log Analytics Workspace
+
 <p>
-<img src="https://github.com/user-attachments/assets/aa4bbfca-8719-4f3d-a6d8-0a539f12fbf8" height="60%" width="60%" alt="Set Client 1 DNS"/>
+<img src="https://github.com/user-attachments/assets/1b8b6c95-5e85-480f-937d-1715cd8bc3d0" height="60%" width="60%" alt="Connecting to Sentinel"/>
 </p>
 <p>
-  
-- Run ipconfig /all
-  - Confirm the DNS Server is set to dc-1’s IP address.
+
+- Go to Microsoft Sentinel and Connect the Newly added Log Analytics Workspace to the Sentinel Instance.
+
 </p>
 <br />
 
 <h2>Deployment Steps</h2>
 
-### 4. Viewing Raw Logs on Event Viewer
+### 5. Configure the Event Connector from the VM and Log Analytics Workspace. 
 <p>
-<img src="https://github.com/user-attachments/assets/ee8dc31c-0585-49c7-8c35-abc84f4e53c8" height="60%" width="60%" alt="Install Programs"/>
+<img src="https://github.com/user-attachments/assets/92a39ece-2ada-4833-9068-c4aa1d457c42" height="60%" width="60%" alt="Install Programs"/>
 </p>
 <p>
-  
-- On DC-1, open Server Manager:
-  - Click Add Roles and Features → Check Active Directory Domain Services → Install.
-  - After installation, click Promote this server to a domain controller → Add a new forest (e.g., mydomain.com) → Set a DS Restore Mode password → Install.
-  - Restart DC-1 and log back in using mydomain.com\labuser.
-</p>
-<br />
 
-### 5. Connect VM to Log Analytics Workspace
-<p>
-<img src="https://github.com/user-attachments/assets/44bf5b74-f26a-4baa-9c56-c92f061d0faa" height="60%" width="60%" alt="Organizational Units"/>
-</p>
-<p>
-  
+- In the sentinel instance, go to content hub and install the "Windows Security Events" add on.
+
+- Once installed click "Manage" and add the "Windows Security Events via AMA" to open the connector page.
+
+- Create a data collection rule for our resource group and VM to share log analytics with the Log Analytics Workspace.
+
+- In the rule, select our VM and leave everything else default. Click create, notice in our VM the extensions and applications being added.
 
 </p>
 <br />
 
 <p>
-<img src="https://github.com/user-attachments/assets/ab8d0246-aae9-4120-9ceb-208df7542689" height="60%" width="60%" alt="Create Domain User"/>
+<img src="https://github.com/user-attachments/assets/896d6888-5d32-48ef-a9f3-c56e50518516" height="60%" width="60%" alt="Log Workspaces"/>
 </p>
 <p>
-  
-- Under the _ADMINS OU, create a new user jane_admin.
-- Set a password, then go to Properties → Member Of → Add Domain Admins group.
-- Log out and log back in as mydomain.com\jane_admin.
-</p>
-<br />
 
-### 6. Run Different Queries and Notice Attackers
-<p>
-<img src="https://github.com/user-attachments/assets/a3639515-7f99-4ced-bb63-d1d841332cf8" height="60%" width="60%" alt="Register PHP Version on IIS Manager"/>
-</p>
-<p>
-let GeoIPDB_FULL = _GetWatchlist("geoip");
-let WindowsEvents = SecurityEvent
-| where IpAddress == "185.156.73.169"
-| where EventID == 4625
-| order by TimeGenerated desc
-| evaluate ipv4_lookup(GeoIPDB_FULL, IpAddress, network);
-WindowsEvents 
-| project TimeGenerated, Computer, AttackerIp = IpAddress, cityname, countryname, latitude, longitude
+- Verify logs are now being shared to the Log Analytics Workspace. Go to the resource group and select our LAW.
+
+- Under our LAW, select logs and run the query "SecurityEvent" to witness the logs now being shared from our VM.
 
 </p>
 <br />
 
+### 5. Querying our Log Repository using KQL
 <p>
-<img src="https://github.com/user-attachments/assets/c3c9f9d5-27bb-4ca5-9c6c-36b1527dcb25" height="60%" width="60%" alt="Domain Client Check"/>
-</p>
-<p>
-  
-- On DC-1, open Active Directory Users and Computers.
-  - Check under Computers; you should see client-1.
-  - Optionally create a new OU called _CLIENTS and move client-1 there.
-</p>
-<br />
-
-<h2>Creating Users using Powershell</h2>
-
-### 7. Create Map of Attacker Areas
-<p>
-<img src="https://github.com/user-attachments/assets/629197ca-429a-4a70-b3ea-e9312c938186" height="60%" width="60%" alt="Installation Steps"/>
+<img src="https://github.com/user-attachments/assets/644a5aea-1912-4d86-b541-41749943eab7" height="60%" width="60%" alt="Return an instance with columns"/>
 </p>
 <p>
 
-- On Client-1, log in as mydomain.com\jane_admin.
-  - Open System Properties → Remote Desktop → Select users who can remotely access this PC → Add Domain Users from mydomain.com.
+- Run the query SecurityEvent | where Account == "\\FAGNER" | project TimeGenerated, Account, Computer, EventID, Activity, IpAddress
+
+- Bonus: See how many attacks have happened in the last 5 minutes. 
+
+- Bonus: Lookup the IPAddress from our attacker. 
+
 </p>
 <br />
 
-### 8. Create a Bunch of Additional Users and Attempt to Log into Client-1 with one of the Users
+### 6. Uploading the Different Attackers to a Geospatial Map
+
 <p>
-<img src="https://github.com/user-attachments/assets/a729dc27-6d29-41cb-9f43-3e68efb38c90" height="60%" width="60%" alt=""/>
+<img src="https://github.com/user-attachments/assets/ed9e0be0-3ab3-4a00-92c9-e3ff74017fe7" height="60%" width="60%" alt="geoip"/>
 </p>
 <p>
-  
-- On DC-1, log in as jane_admin.
-  - Open PowerShell ISE as administrator.
-  - Paste the content of the Generate-Names-Create-Users.ps1 script.
-  - Run the script to bulk-create user accounts in your domain.
-</p>
-<br />
 
-<h2>Group Policy and Managing Accounts</h2>
+- Download the following file that summarizes IP Address Ranges and Specific Locations. [Drive File](https://drive.google.com/file/d/13EfjM_4BohrmaxqXZLB5VUBIz2sv9Siz/view?usp=sharing)
 
-### 9. Dealing with Account Lockouts
-<p>
-<img src="https://github.com/user-attachments/assets/92ace8a8-7f9f-4e95-95f1-0c3cd50f11dd" height="60%" width="60%" alt=""/>
-</p>
+- Go to our Sentinel instance and go to configuration --> Watchlist --> create an watchlist with the name and alias 'geoip' and a import the source file we downloaded.
 
-- On DC-1, open Active Directory Users and Computers.
-  - Pick a random account in _EMPLOYEES to test.
+- Enter searchkey as 'network' and create.
 
-- Press Windows Key + R, type gpmc.msc to open the Group Policy Management Console.
-  - Edit the Default Domain Policy → Computer Configuration → Policies → Windows Settings → Security Settings → Account Policies → Account Lockout Policy.
-  - Set:
-      - Account lockout duration: 30 minutes
-      - Account lockout threshold: 5 invalid attempts
-
-- On Client-1, attempt to log in with the chosen user and deliberately enter the wrong password multiple times to lock the account.
-<p>
-</p>
+</p> 
 <br />
 
 <p>
-<img src="https://github.com/user-attachments/assets/4b9db056-6dbc-4949-8364-c2db0cf71133" height="60%" width="60%" alt="unlock account"/>
+<img src="https://github.com/user-attachments/assets/fc9f9ee4-31f9-4ada-aff4-d76e0ead950d" height="60%" width="60%" alt="geoip on LAW"/>
 </p>
 <p>
-  
-- Back on DC-1, open Active Directory Users and Computers.
-  - Find the locked user → Properties → Account tab → Unlock Account.
-  - Optionally reset their password.
-  - Attempt to log in again on Client-1 with the correct credentials. 
+
+- Once fully uploaded, lets examine some queries in the Log Analytics Workspace.
+
+- If we run the query '_GetWatchlist("geoip")' we notice that we see the geoip file we uploaded in our Sentinel instance. 
+
+</p> 
+<br />
+
+<p>
+<img src="https://github.com/user-attachments/assets/02601115-c921-403a-8181-830c927b5181" height="60%" width="60%" alt="Running KQL query against our new tables"/>
+</p>
+<p>
+
+- Test to see our attackers locations against our login failures.
+    
+    let GeoIPDB_FULL = _GetWatchlist("geoip");
+    let WindowsEvents = SecurityEvent
+    | where IpAddress == <attacker IP address> 
+    | where EventID == 4625
+    | order by TimeGenerated desc
+    | evaluate ipv4_lookup(GeoIPDB_FULL, IpAddress, network);
+    WindowsEvents 
+    | project TimeGenerated, Computer, AttackerIp = IpAddress, cityname, countryname, latitude, longitude
+    
 </p>
 <br />
 
-### 10. Enabling and Disabling Accounts
 <p>
-<img src="https://github.com/user-attachments/assets/ea297579-54db-428e-94ff-ef8264175e52" height="60%" width="60%" alt="enabling account"/>
+<img src="https://github.com/user-attachments/assets/de38187b-0fdd-4a10-a398-156035838585" height="60%" width="60%" alt="Creating the Map"/>
 </p>
 <p>
-  
-- On DC-1, choose a user account → Right-click → Disable Account.
-- Attempt to log in on Client-1 with that user and note that it fails.
-- Back on DC-1, Enable the same user account.
-- Try logging in again, which should now succeed.
-</p>
-<br />
 
-### 11. Obeserve the Logs 
-<p>
-<img src="https://github.com/user-attachments/assets/034d2401-69a2-4448-b974-2bca759fff8f" height="60%" width="60%" alt=""/>
-</p>
-<p>
-  
-- On DC-1, press Windows Key + R, type eventvwr.msc to open Event Viewer.
-  - Go to Windows Logs → Security → Search for events related to the chosen user.
+- Go to our Sentinel instance and add a workbook.
 
-- On Client-1, you can also open Event Viewer to observe successful or failed login attempts from the local perspective.
+- Follow the link and add our map.json to the workbook: [Drive File](https://drive.google.com/file/d/1ErlVEK5cQjpGyOcu4T02xYy7F31dWuir/view?usp=drive_link)
+
+- Under advanced editor, erase everything, and copy/paste the map.json inside. Then save. 
 </p>
 <br />
 
-### 12. Conclusion
-You have successfully deployed a basic on-premises style Active Directory lab inside Azure, created domain administrator and standard user accounts, joined a Windows 10 client to the domain, and tested various Active Directory features such as account lockout policies, enabling/disabling accounts, and examining security logs.
+## Conclusion
+Deploying a **honeypot in Azure** is a powerful way to observe real-world cyber threats in action. By setting up **Microsoft Sentinel**, configuring **log analytics**, and leveraging **Kusto Query Language (KQL)**, we gain invaluable insights into potential attack vectors and malicious actors.
 
-<h2>Next Steps for Exploring Active Directory Further</h2>
+Through this project, we:
+- **Monitored real-world attack attempts** and analyzed unauthorized login attempts.
+- **Configured Azure Sentinel** to collect security logs and track malicious activities.
+- **Queried log data with KQL** to extract meaningful threat intelligence.
+- **Mapped attacker locations** using geospatial visualization.
 
-1. Advanced Group Policy
-    - Configure specific Group Policies for software deployment, folder redirection, or workstation security settings.
-    - Explore creating and linking multiple GPOs to different Organizational Units.
+This lab serves as a foundational project for anyone pursuing cybersecurity, **blue team operations**, or **threat intelligence analysis**. Understanding attacker behavior is crucial for building **proactive defense mechanisms** in real-world enterprise environments. 
 
-2. DNS and DHCP Integration
-    - Set up DHCP on your Domain Controller or another server to manage IP addressing in a more dynamic environment.
-    - Explore advanced DNS configurations, like conditional forwarders and DNS zone replication.
+By experimenting in a **controlled environment**, you can improve your ability to detect, mitigate, and respond to cyber threats, strengthening your security expertise in a practical and engaging way.
 
-3. Replication and Sites
-    - Experiment with adding another Domain Controller in a different Azure region or on-premises location.
-    - Configure Sites and Subnets in Active Directory to optimize replication.
-
-4. Certificate Services
-    - Install and configure Active Directory Certificate Services to issue certificates for users and machines.
-    - Explore how certificates can secure RDP sessions, web servers, or wireless networks.
-
-5. Multi-Domain / Multi-Forest Environments
-    - Investigate creating multiple domains and establishing trust relationships.
