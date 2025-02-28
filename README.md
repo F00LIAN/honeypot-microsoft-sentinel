@@ -1,6 +1,7 @@
 <p align="center">
 <img src="https://github.com/user-attachments/assets/757ba505-315f-431e-bfc5-c320405709a7" height="50%" width="50%" alt="Microsoft Active Directory Logo"/>
 </p>
+
 # Setting Up a Honeypot for Public Attackers using Azure
 
 ## Introduction
