@@ -21,7 +21,7 @@ This tutorial is designed for cybersecurity enthusiasts, IT professionals, and a
 You are **a cybersecurity analyst** or **an IT professional** looking to understand how attackers operate. By setting up this honeypot, you can gain hands-on experience in threat detection, log analysis, and security monitoring using industry-standard tools like **Microsoft Sentinel**.
 
 ## Video Demonstration
-- ### [YouTube: How to Create an At-Home Security Operations Center Lab](https://www.youtube.com)
+- ### [YouTube: How to Create an At-Home Security Operations Center Lab (TBD)](https://www.youtube.com)
 
 ## Environments and Technologies Used
 - **Microsoft Azure** (Virtual Machines/VNet/Log Analytics/Sentinel)
