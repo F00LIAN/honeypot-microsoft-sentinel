@@ -119,21 +119,69 @@ SecurityEvent
 - In **Sentinel**, navigate to **Configuration → Watchlist**, and create a watchlist named `geoip`.
 - Set `searchkey` as `network` and upload the database file.
 
-### 8. Mapping Attackers Using KQL and Geolocation
-```kql
-let GeoIPDB_FULL = _GetWatchlist("geoip");
-let WindowsEvents = SecurityEvent
-| where EventID == 4625
-| evaluate ipv4_lookup(GeoIPDB_FULL, IpAddress, network);
-WindowsEvents 
-| project TimeGenerated, Computer, AttackerIp = IpAddress, cityname, countryname, latitude, longitude
+### 8. Initialize the Geo IP Map on Microsoft Sentinel with a Query
+<p>
+<img src="https://github.com/user-attachments/assets/bbcb451f-49f3-40fa-ae24-1ab0cb7ca8ea" height="60%" width="60%" alt="geoip_query"/>
+</p>
+
+```json
+{
+	"type": 3,
+	"content": {
+	"version": "KqlItem/1.0",
+	"query": "let GeoIPDB_FULL = _GetWatchlist(\"geoip\");\nlet WindowsEvents = SecurityEvent;\nWindowsEvents | where EventID == 4625\n| order by TimeGenerated desc\n| evaluate ipv4_lookup(GeoIPDB_FULL, IpAddress, network)\n| summarize FailureCount = count() by IpAddress, latitude, longitude, cityname, countryname\n| project FailureCount, AttackerIp = IpAddress, latitude, longitude, city = cityname, country = countryname,\nfriendly_location = strcat(cityname, \" (\", countryname, \")\");",
+	"size": 3,
+	"timeContext": {
+		"durationMs": 2592000000
+	},
+	"queryType": 0,
+	"resourceType": "microsoft.operationalinsights/workspaces",
+	"visualization": "map",
+	"mapSettings": {
+		"locInfo": "LatLong",
+		"locInfoColumn": "countryname",
+		"latitude": "latitude",
+		"longitude": "longitude",
+		"sizeSettings": "FailureCount",
+		"sizeAggregation": "Sum",
+		"opacity": 0.8,
+		"labelSettings": "friendly_location",
+		"legendMetric": "FailureCount",
+		"legendAggregation": "Sum",
+		"itemColorSettings": {
+		"nodeColorField": "FailureCount",
+		"colorAggregation": "Sum",
+		"type": "heatmap",
+		"heatmapPalette": "greenRed"
+		}
+	}
+	},
+	"name": "query - 0"
+}
 ```
 
----
+- In **Sentinel**, create a new **workbook**, delete the default items, and add a new workbook with the above insert **query**.
+
+### 8. Mapping Attackers Using KQL and Geolocation
+<p>
+<img src="https://github.com/user-attachments/assets/92a71ba6-5bfa-4809-8132-ba716c2fbe6f" height="60%" width="60%" alt="geoip_query"/>
+</p>
+
+```kql
+let GeoIPDB_FULL = _GetWatchlist("geoip");
+let WindowsEvents = SecurityEvent;
+WindowsEvents | where EventID == 4625
+| order by TimeGenerated desc
+| evaluate ipv4_lookup(GeoIPDB_FULL, IpAddress, network)
+| summarize FailureCount = count() by IpAddress, latitude, longitude, cityname, countryname
+| project FailureCount, AttackerIp = IpAddress, latitude, longitude, city = cityname, country = countryname,
+friendly_location = strcat(cityname, " (", countryname, ")");
+```
+
+- Once the **workbook** adds the geomap, go ahead and edit the map and input the above **query**.
 
 ## Conclusion
 Deploying a **honeypot in Azure** allows real-world threat monitoring, log analysis, and proactive cybersecurity research. This project is ideal for IT professionals looking to strengthen security expertise and gain hands-on experience with **Microsoft Sentinel** and **KQL**.
-
 
 This lab serves as a foundational project for anyone pursuing cybersecurity, **blue team operations**, or **threat intelligence analysis**. Understanding attacker behavior is crucial for building **proactive defense mechanisms** in real-world enterprise environments. 
 
