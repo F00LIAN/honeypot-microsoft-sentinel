@@ -164,7 +164,7 @@ SecurityEvent
 
 ### 8. Mapping Attackers Using KQL and Geolocation
 <p>
-<img src="https://github.com/user-attachments/assets/92a71ba6-5bfa-4809-8132-ba716c2fbe6f" height="60%" width="60%" alt="geoip_query"/>
+<img src="https://github.com/user-attachments/assets/4f91675b-73fd-4f88-bfe8-77c2b8096e82" height="60%" width="60%" alt="geoip_query"/>
 </p>
 
 ```kql
